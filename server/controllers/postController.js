@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const fs = require('fs');
 const path = require('path');
+const { storeImage } = require('../config/imageStorage');
 const fields = (b) => ({ title: String(b.title || '').trim(), location: String(b.location || '').trim(), description: String(b.description || '').trim() });
 const valid = p => p.title && p.title.length <= 180 && p.location && p.location.length <= 180 && p.description && p.description.length <= 10000;
 
@@ -29,7 +30,8 @@ exports.create = async (req, res, next) => {
   try {
     const p = fields(req.body);
     if (!valid(p) || !req.file) return res.status(400).json({ message: 'Add a title, location, description, and travel image.' });
-    const [result] = await db.execute('INSERT INTO posts(user_id,title,location,description,image) VALUES(?,?,?,?,?)', [req.user.id, p.title, p.location, p.description, `/uploads/${req.file.filename}`]);
+    const image = await storeImage(req.file);
+    const [result] = await db.execute('INSERT INTO posts(user_id,title,location,description,image) VALUES(?,?,?,?,?)', [req.user.id, p.title, p.location, p.description, image]);
     res.status(201).json({ id: result.insertId, message: 'Your travel story is published.' });
   } catch (err) { next(err); }
 };
@@ -39,7 +41,7 @@ exports.update = async (req, res, next) => {
     if (!rows.length) return res.status(404).json({ message: 'Post not found.' });
     if (rows[0].user_id !== req.user.id) return res.status(403).json({ message: 'You are not allowed to edit this post.' });
     const p = fields(req.body); if (!valid(p)) return res.status(400).json({ message: 'Title, location, and description are required.' });
-    const image = req.file ? `/uploads/${req.file.filename}` : rows[0].image;
+    const image = req.file ? await storeImage(req.file) : rows[0].image;
     await db.execute('UPDATE posts SET title=?,location=?,description=?,image=? WHERE id=?', [p.title,p.location,p.description,image,req.params.id]);
     if (req.file && rows[0].image.startsWith('/uploads/')) fs.promises.unlink(path.join(__dirname,'..',rows[0].image)).catch(()=>{});
     res.json({ message: 'Post updated.' });

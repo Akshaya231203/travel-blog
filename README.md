@@ -88,6 +88,18 @@ Add screenshots of the home, explore, post details, and profile pages here after
 
 - Search, filters, and pagination
 - Email verification and password reset
-- Cloud image storage for production deployment
+- Search, filters, and pagination
 - Automated test suite and CI workflow
-- Public hosting and a managed MySQL database
+- Email verification and password reset
+
+## Free deployment (Render + TiDB Cloud + Cloudinary)
+
+The app can be deployed on free tiers without entering a payment method, subject to each provider's current free limits. Free plans can change; keep billing disabled and never add a payment method if you want to avoid charges. Render free web services can sleep while idle, so the first visit after inactivity may take time. A Render local disk is temporary, so production images use Cloudinary.
+
+1. Create a TiDB Cloud Starter cluster and create the database/tables by running `database/schema.sql` in its SQL editor. Copy its public connection host, port, username, and generated password.
+2. Create a Cloudinary account and copy the cloud name, API key, and API secret from its dashboard.
+3. In Render, create a Web Service from this GitHub repository. Use build command `npm install` and start command `npm start`. Choose the Free instance type.
+4. Add these environment variables in Render: `NODE_ENV=production`, `JWT_SECRET` (a long random secret), `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME=travel_blog_db`, `DB_SSL=true`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`.
+5. Deploy and open the Render URL. Create an account and publish a test post with an image.
+
+Never commit `.env` or enter paid options. The app will only deploy once you have created the provider accounts and supplied their connection values to Render.
